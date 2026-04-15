@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata: 
+ name: devops-app
+spec: 
+ replicas: 2
+ selector: 
+  matchLabels:
+   app: devops-app
+ template:
+  metadata:
+   labels:
+    app: devops-app #service uses this label to find the pods
+  spec:
+   containers:
+    - name: devops-container
+      image: devops-mini-app:v1 #the same docker image
+        #imagePullPolicy: Always(go through this logic once) 
+      ports:
+       - containerPort: 3000
+      env:
+       - name: NODE_ENV
+         value: "production"

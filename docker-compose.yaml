@@ -1,0 +1,8 @@
+services:
+  server:
+    build: .
+    container_name: devops-app
+    ports: 
+      - "5000:3000" # host_port(my laptop):container_port(container ka)
+    environment:
+      - NODE_ENV=production

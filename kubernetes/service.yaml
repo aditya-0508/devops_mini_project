@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+ name: devops-service
+spec:
+ type: NodePort #exposes app outside cluster
+ selector:
+  app: devops-app #connect to pods using the label Service -- Deployment
+ ports:
+   - protocol: TCP
+     port: 3000 #Service receives req on 3000
+     targetPort: 3000 #Sends to container port 3000
+     nodePort: 30007 #external port
