@@ -38,6 +38,14 @@ pipeline {
                 sh "docker push ${DOCKERHUB_USER}/${IMAGE_NAME}:${IMAGE_TAG}"
             }
         }
+        stage('Deploy to Kubernetes') {
+    steps {
+        sh """
+        chmod +x deploy-to-k8s.sh
+        ./deploy-to-k8s.sh ${DOCKERHUB_USER}/${IMAGE_NAME} ${IMAGE_TAG}
+        """
+    }
+}
         stage('Cleanup') {
             steps {
                 sh "docker system prune -af"
