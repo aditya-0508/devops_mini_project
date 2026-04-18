@@ -217,3 +217,33 @@ Browser → NodePort (30007)
         → App (port 3000)
 Go through the logic of imagePullPolicy
 '''
+```
+**Jenkins Pipeline**
+```
+## Jenkins Setup
+
+1. Run Jenkins using Docker:
+
+docker run -d \
+  --name jenkins \
+  -p 8080:8080 \
+  -v jenkins_home:/var/jenkins_home \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  jenkins/jenkins:lts
+
+Also make sure(if docker doesn't work in jenkins container)
+docker exec -u 0 -it jenkins bash
+groupadd docker
+usermod -aG docker jenkins
+chmod 666 /var/run/docker.sock
+exit
+docker restart jenkins
+
+2. Install plugins:
+- Docker Pipeline
+- Git
+- Pipeline
+
+3. Add DockerHub credentials in Jenkins in that credentials section
+
+4. Create Pipeline job and connect to GitHub repo
