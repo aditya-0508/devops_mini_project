@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         IMAGE_NAME = "devops-mini-app"
-        IMAGE_TAG = "v1"
+        IMAGE_TAG = "${BUILD_NUMBER}"
         DOCKERHUB_USER = "adi070903"
     }
 
@@ -36,6 +36,11 @@ pipeline {
         stage('Push Image') {
             steps {
                 sh "docker push ${DOCKERHUB_USER}/${IMAGE_NAME}:${IMAGE_TAG}"
+            }
+        }
+        stage('Cleanup') {
+            steps {
+                sh "docker system prune -af"
             }
         }
     }
