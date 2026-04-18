@@ -243,5 +243,21 @@ docker restart jenkins
 - Pipeline
 
 3. Add DockerHub credentials in Jenkins in that credentials section
-
-4. Create Pipeline job and connect to GitHub repo
+```
+** Adding Git Webhooks to Jenkins**
+```
+We will be using ngrok
+ngrok is a globally managed reverse proxy and secure tunneling tool that exposes local development servers (e.g., localhost:3000) to the public internet via a unique URL. It is heavily used by developers to instantly share local projects, test webhooks (like Stripe or Slack), and access local devices remotely without complex firewall or NAT configuration.
+# Installing ngrok
+sudo apt install unzip -y
+wget https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-linux-amd64.zip
+unzip ngrok-v3-stable-linux-amd64.zip
+sudo mv ngrok /usr/local/bin
+Authenticate ngrok
+Go to ngrok website → signup
+Copy auth token
+ngrok config add-authtoken <your_token>
+ngrok http 8080
+You will be getting a url use that in the webhook(payload url) and application/json while creating in the same repo
+  Create Pipeline job and connect to GitHub repo
+``
