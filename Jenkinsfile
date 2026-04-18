@@ -11,13 +11,11 @@ pipeline {
 
         stage('Checkout Code') {
     steps {
-        checkout([$class: 'GitSCM',
-            branches: [[name: '*/main']],
-            userRemoteConfigs: [[
-                url: 'https://github.com/aditya-0508/devops-mini-project.git',
-                credentialsId: ''
-            ]]
-        ])
+        sh '''
+        rm -rf devops-mini-project
+        git clone https://github.com/aditya-0508/devops-mini-project.git
+        cd devops-mini-project
+        '''
     }
 }
 
