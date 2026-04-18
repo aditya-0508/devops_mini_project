@@ -38,15 +38,6 @@ pipeline {
                 sh "docker push ${DOCKERHUB_USER}/${IMAGE_NAME}:${IMAGE_TAG}"
             }
         }
-
-        stage('Deploy to Kubernetes') {
-            steps {
-                sh """
-                kubectl set image deployment/devops-app \
-                devops-container=${DOCKERHUB_USER}/${IMAGE_NAME}:${IMAGE_TAG}
-                """
-            }
-        }
     }
 
     post {
