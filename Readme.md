@@ -210,13 +210,11 @@ kubectl get services
 minikube service devops-service --url
 # will give you an url put in browser and check
 
-'''
 Browser → NodePort (30007)
         → Service
         → Pod (container)
         → App (port 3000)
 Go through the logic of imagePullPolicy
-'''
 ```
 **Jenkins Pipeline**
 ```
