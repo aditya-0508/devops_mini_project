@@ -10,10 +10,16 @@ pipeline {
     stages {
 
         stage('Checkout Code') {
-            steps {
-                git 'https://github.com/aditya-0508/devops-mini-project.git'
-            }
-        }
+    steps {
+        checkout([$class: 'GitSCM',
+            branches: [[name: '*/main']],
+            userRemoteConfigs: [[
+                url: 'https://github.com/aditya-0508/devops-mini-project.git',
+                credentialsId: ''
+            ]]
+        ])
+    }
+}
 
         stage('Build Docker Image') {
             steps {
