@@ -10,14 +10,10 @@ pipeline {
     stages {
 
         stage('Checkout Code') {
-    steps {
-        sh '''
-        rm -rf devops-mini-project
-        git clone https://github.com/aditya-0508/devops-mini-project.git
-        cd devops-mini-project
-        '''
-    }
-}
+            steps {
+                git 'https://github.com/aditya-0508/devops_mini_project.git'
+            }
+        }
 
         stage('Build Docker Image') {
             steps {
