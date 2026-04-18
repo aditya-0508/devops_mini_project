@@ -260,4 +260,7 @@ ngrok config add-authtoken <your_token>
 ngrok http 8080
 You will be getting a url use that in the webhook(payload url) and application/json while creating in the same repo
   Create Pipeline job and connect to GitHub repo
-``
+```
+
+Jenkins runs inside Docker and Minikube is a local so it runs on WSL, so we faced a lot of issues with respect to 
+adding that in the pipeline so suggested to use minikube 
