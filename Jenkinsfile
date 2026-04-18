@@ -11,7 +11,7 @@ pipeline {
 
         stage('Checkout Code') {
             steps {
-                git 'https://github.com/adi-0508/devops-mini-project.git'
+                git 'https://github.com/aditya-0508/devops-mini-project.git'
             }
         }
 
