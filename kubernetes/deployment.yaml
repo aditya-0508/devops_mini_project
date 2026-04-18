@@ -1,23 +1,65 @@
 apiVersion: apps/v1
 kind: Deployment
-metadata: 
- name: devops-app
-spec: 
- replicas: 2
- selector: 
-  matchLabels:
-   app: devops-app
- template:
-  metadata:
-   labels:
-    app: devops-app #service uses this label to find the pods
-  spec:
-   containers:
-    - name: devops-container
-      image: devops-mini-app:v1 #the same docker image
-        #imagePullPolicy: Always(go through this logic once) 
-      ports:
-       - containerPort: 3000
-      env:
-       - name: NODE_ENV
-         value: "production"
+metadata:
+  name: devops-deployment
+  labels:
+    app: devops-app
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: devops-app
+  template:
+    metadata:
+      labels:
+        app: devops-app
+        version: v1
+    spec:
+      containers:
+      - name: devops-app
+        image: devops-mini-app:latest
+        imagePullPolicy: Never  # For Minikube
+        ports:
+        - containerPort: 3000
+          name: http
+          protocol: TCP
+        
+        # Resource management
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+        
+        # Health checks
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 3000
+          initialDelaySeconds: 15
+          periodSeconds: 10
+          timeoutSeconds: 3
+          failureThreshold: 3
+        
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 3000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+        
+        # Environment variables
+        env:
+        - name: NODE_ENV
+          value: "production"
+        - name: PORT
+          value: "3000"
