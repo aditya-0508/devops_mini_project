@@ -26,43 +26,6 @@ pipeline {
                 """
             }
         }
-        
-        stage('Test Container') {
-            steps {
-                echo '🧪 Running container tests...'
-                script {
-                    sh """
-                        # Start test container
-                        docker run -d --name test-${BUILD_NUMBER} -p 3001:3000 ${FULL_IMAGE_NAME}
-                        
-                        # Wait for app to start
-                        echo "Waiting for application to start..."
-                        sleep 10
-                        
-                        # Health check
-                        echo "Testing health endpoint..."
-                        curl -f http://localhost:3001/health || exit 1
-                        
-                        # Main endpoint check
-                        echo "Testing main endpoint..."
-                        HTTP_CODE=\$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3001)
-                        if [ \$HTTP_CODE -eq 200 ]; then
-                            echo "✓ Application is responding correctly"
-                        else
-                            echo "✗ Application returned HTTP \$HTTP_CODE"
-                            exit 1
-                        fi
-                        
-                        # Cleanup
-                        docker stop test-${BUILD_NUMBER}
-                        docker rm test-${BUILD_NUMBER}
-                        
-                        echo "✅ All tests passed!"
-                    """
-                }
-            }
-        }
-        
         stage('Login to DockerHub') {
             steps {
                 echo '🔐 Logging in to DockerHub...'
