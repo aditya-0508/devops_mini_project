@@ -1,10 +1,9 @@
-Buliding a full stack Devops pipeline demonstrating containerization, IAC, CI/CD automtaion
+Buliding a full stack Devops pipeline demonstrating containerization, CI/CD automtaion
 
 **Technologies Used:**
 - Docker (Containerization)
 - Kubernetes (Container Orchestration)
 - Jenkins (CI/CD)
-- Terraform (Infrastructure as Code)
 - Git/GitHub (Version Control)
 
 ## Phase 1 --> Installation and Prerequisties
@@ -49,7 +48,7 @@ sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
 kubectl version --client
 ```
 
-**Step 2:** Install Minikube
+**Step 2:** Install Minikube(For local installation only)
 ```bash
 curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
 sudo install minikube-linux-amd64 /usr/local/bin/minikube
