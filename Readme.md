@@ -410,19 +410,25 @@ GitHub → Jenkins (build image)
      Update Git (image tag)
         ↓
      ArgoCD → Kubernetes
+
 # Step 1: Create namespace
 kubectl create namespace argocd
+
 #Step 2 Install ArgoCD
 kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml --server-side --force-conflicts
+
 #Step 3 Check the pods
 kubectl get pods -n argocd
+
 #Step 4 Expose ArgoCD UI
 kubectl port-forward svc/argocd-server -n argocd 9090:443
+
 # Step 5 Get Password for the UI
 kubectl -n argocd get secret argocd-initial-admin-secret \
 -o jsonpath="{.data.password}" | base64 -d
 
 # Step 6: We have to create an ArgoCD Application
+
 kubectl apply -f - <<EOF
 apiVersion: argoproj.io/v1alpha1
 kind: Application
