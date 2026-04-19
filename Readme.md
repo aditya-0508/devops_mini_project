@@ -263,7 +263,7 @@ Create Pipeline job and connect to GitHub repo
 ```
 
 Jenkins runs inside Docker and Minikube is a local so it runs on WSL, so we faced a lot of issues with respect to 
-adding that in the pipeline so suggested to use minikube 
+adding that in the pipeline so suggested to use kind 
 
 **Kind Deployment for Pipeline**
 ```
@@ -318,6 +318,8 @@ docker exec jenkins chown -R jenkins:jenkins /var/jenkins_home/.kube
 # 4. Test it - THIS SHOULD WORK NOW!
 docker exec jenkins kubectl get nodes
 
+
+# If you are facing issues
 # First, let's check if Jenkins is on the kind network
 docker network inspect kind | grep jenkins
 
