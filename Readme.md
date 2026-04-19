@@ -404,3 +404,21 @@ echo "If you see nodes above, SUCCESS! ✅"
 Argo CD is a "GitOps" tool for Kubernetes that acts like a bridge between your code and your live servers. In simple terms, it ensures that whatever is written in your Git repository (like GitHub or GitLab) is exactly what is running in your cluster.
 Whenever any change is made in git repo Argocd verifies the state of the cluster with the git state and updates it accordingly (Automatic Sync). And Git is the source of the truth. Visibility: It provides a web UI where you can visually see all your apps, their health, and how they are connected.
 
+#With AgroCD implementation
+GitHub → Jenkins (build image)
+        ↓
+     Update Git (image tag)
+        ↓
+     ArgoCD → Kubernetes
+# Step 1: Create namespace
+kubectl create namespace argocd
+#Step 2 Install ArgoCD
+kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml --server-side --force-conflicts
+#Step 3
+kubectl get pods -n argocd
+#Step 4 Expose ArgoCD UI
+kubectl port-forward svc/argocd-server -n argocd 9090:443
+# Step 5 Get Password for the UI
+kubectl -n argocd get secret argocd-initial-admin-secret \
+-o jsonpath="{.data.password}" | base64 -d
+
