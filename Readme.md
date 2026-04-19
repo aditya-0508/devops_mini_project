@@ -260,8 +260,140 @@ Copy auth token
 ngrok config add-authtoken <your_token>
 ngrok http 8080
 You will be getting a url use that in the webhook(payload url) and application/json while creating in the same repo
-  Create Pipeline job and connect to GitHub repo
+Create Pipeline job and connect to GitHub repo
 ```
 
 Jenkins runs inside Docker and Minikube is a local so it runs on WSL, so we faced a lot of issues with respect to 
 adding that in the pipeline so suggested to use minikube 
+
+**Kind Deployment for Pipeline**
+```
+# In your WSL Ubuntu terminal
+
+# Download KIND
+curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.20.0/kind-linux-amd64
+
+# Make it executable
+chmod +x ./kind
+
+# Move to PATH
+sudo mv ./kind /usr/local/bin/kind
+
+# Verify installation
+kind version
+
+# Create a simple cluster
+kind create cluster --name devops-cluster
+
+# Or create with custom config (recommended)
+cat > kind-config.yaml << 'EOF'
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: devops-cluster
+nodes:
+- role: control-plane
+  extraPortMappings:
+  - containerPort: 30007
+    hostPort: 30007
+    protocol: TCP
+EOF
+
+# Create cluster with config
+kind create cluster --config kind-config.yaml
+
+# Verify cluster is running
+kubectl cluster-info --context kind-devops-cluster
+kubectl get nodes
+
+# 1. Jenkins already has Docker access, so it can talk to KIND automatically!
+
+# 2. Just copy kubectl (if not already done)
+docker exec jenkins which kubectl || docker cp $(which kubectl) jenkins:/usr/local/bin/kubectl
+docker exec jenkins chmod +x /usr/local/bin/kubectl
+
+# 3. Copy the KIND kubeconfig
+docker exec jenkins mkdir -p /var/jenkins_home/.kube
+docker cp ~/.kube/config jenkins:/var/jenkins_home/.kube/config
+docker exec jenkins chown -R jenkins:jenkins /var/jenkins_home/.kube
+
+# 4. Test it - THIS SHOULD WORK NOW!
+docker exec jenkins kubectl get nodes
+
+# First, let's check if Jenkins is on the kind network
+docker network inspect kind | grep jenkins
+
+# If you don't see jenkins listed, connect it:
+docker network connect kind jenkins
+
+# Verify Jenkins is now on the kind network:
+docker network inspect kind | grep jenkins
+# Step 1: Check if certificates can be extracted
+echo "Testing certificate extraction..."
+kubectl config view --raw --minify -o jsonpath='{.clusters[0].cluster.certificate-authority-data}' | head -c 50
+echo ""
+echo "If you see base64 data above, certificates are OK"
+
+# Step 2: Get the KIND cluster details
+echo ""
+echo "KIND cluster info:"
+kubectl cluster-info --context kind-devops-cluster
+
+# Step 3: Check KIND container name
+echo ""
+echo "KIND container:"
+docker ps | grep devops-cluster
+
+# Step 4: Create kubeconfig manually (verbose version)
+echo ""
+echo "Creating kubeconfig..."
+
+CA_DATA=$(kubectl config view --raw --minify -o jsonpath='{.clusters[0].cluster.certificate-authority-data}')
+CLIENT_CERT=$(kubectl config view --raw --minify -o jsonpath='{.users[0].user.client-certificate-data}')
+CLIENT_KEY=$(kubectl config view --raw --minify -o jsonpath='{.users[0].user.client-key-data}')
+
+echo "CA_DATA length: ${#CA_DATA}"
+echo "CLIENT_CERT length: ${#CLIENT_CERT}"
+echo "CLIENT_KEY length: ${#CLIENT_KEY}"
+
+# If all three have data (should be > 100 characters each), continue:
+cat > /tmp/jenkins-kubeconfig << EOF
+apiVersion: v1
+clusters:
+- cluster:
+    certificate-authority-data: ${CA_DATA}
+    server: https://devops-cluster-control-plane:6443
+  name: kind-devops-cluster
+contexts:
+- context:
+    cluster: kind-devops-cluster
+    user: kind-devops-cluster
+  name: kind-devops-cluster
+current-context: kind-devops-cluster
+kind: Config
+preferences: {}
+users:
+- name: kind-devops-cluster
+  user:
+    client-certificate-data: ${CLIENT_CERT}
+    client-key-data: ${CLIENT_KEY}
+EOF
+
+echo "Kubeconfig created at /tmp/jenkins-kubeconfig"
+ls -lh /tmp/jenkins-kubeconfig
+
+# Step 5: Copy to Jenkins
+echo ""
+echo "Copying to Jenkins..."
+docker cp /tmp/jenkins-kubeconfig jenkins:/var/jenkins_home/.kube/config
+
+echo "Setting permissions..."
+docker exec jenkins chown jenkins:jenkins /var/jenkins_home/.kube/config
+
+# Step 6: Test
+echo ""
+echo "Testing kubectl in Jenkins:"
+docker exec jenkins kubectl get nodes
+
+echo ""
+echo "If you see nodes above, SUCCESS! ✅"
+
