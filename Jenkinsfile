@@ -75,32 +75,23 @@ pipeline {
             }
         }
         
-        stage('Deploy to Kubernetes') {
-            steps {
-                echo '☸️ Deploying to Kubernetes cluster...'
-                script {
-                    sh """
-                        # Update deployment image
-                        kubectl set image deployment/devops-deployment \
-                            devops-app=${FULL_IMAGE_NAME} \
-                            --record
-                        
-                        # If deployment doesn't exist, create it
-                        if ! kubectl get deployment devops-deployment > /dev/null 2>&1; then
-                            echo "Deployment doesn't exist, creating..."
-                            kubectl apply -f kubernetes/deployment.yaml
-                            kubectl apply -f kubernetes/service.yaml
-                        fi
-                        
-                        # Wait for rollout to complete
-                        echo "Waiting for deployment to roll out..."
-                        kubectl rollout status deployment/devops-deployment --timeout=180s
-                        
-                        echo "✓ Deployment successful!"
-                    """
-                }
-            }
-        }
+stage('Deploy to Kubernetes') {
+    steps {
+        echo '☸️ Deploying to Kubernetes cluster...'
+        sh """
+            # Ensure namespace objects exist
+            kubectl apply -f kubernetes/deployment.yaml
+            kubectl apply -f kubernetes/service.yaml
+
+            # Now update image
+            kubectl set image deployment/devops-deployment \
+                devops-app=${FULL_IMAGE_NAME}
+
+            # Wait rollout
+            kubectl rollout status deployment/devops-deployment --timeout=180s
+        """
+    }
+}
         
         stage('Verify Deployment') {
             steps {
