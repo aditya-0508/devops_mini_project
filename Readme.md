@@ -242,7 +242,8 @@ docker restart jenkins
 - Git
 - Pipeline
 
-3. Add DockerHub credentials in Jenkins in that credentials section
+3. Add DockerHub credentials in Jenkins in that credentials section, make sure the name in pipeline for id and in the 
+credentials are the same
 ```
 ** Adding Git Webhooks to Jenkins**
 ```
