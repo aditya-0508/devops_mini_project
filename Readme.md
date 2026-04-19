@@ -397,4 +397,10 @@ docker exec jenkins kubectl get nodes
 
 echo ""
 echo "If you see nodes above, SUCCESS! ✅"
+```
+
+** ArgoCD **
+```
+Argo CD is a "GitOps" tool for Kubernetes that acts like a bridge between your code and your live servers. In simple terms, it ensures that whatever is written in your Git repository (like GitHub or GitLab) is exactly what is running in your cluster.
+Whenever any change is made in git repo Argocd verifies the state of the cluster with the git state and updates it accordingly (Automatic Sync). And Git is the source of the truth
 
