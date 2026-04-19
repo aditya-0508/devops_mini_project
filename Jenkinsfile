@@ -112,7 +112,7 @@ stage('Deploy to Kubernetes') {
                         
                         echo ""
                         echo "Recent Rollout History:"
-                        kubectl rollout history deployment/devops-deployment --limit=3
+                        kubectl rollout history deployment/devops-deployment
                         
                         echo ""
                         echo "=================================="
