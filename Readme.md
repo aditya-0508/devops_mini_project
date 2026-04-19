@@ -1,10 +1,11 @@
-Buliding a full stack Devops pipeline demonstrating containerization, CI/CD automtaion
+Buliding a full stack Devops pipeline demonstrating containerization, CI/CD automtaion, Gitops
 
 **Technologies Used:**
 - Docker (Containerization)
 - Kubernetes (Container Orchestration)
 - Jenkins (CI/CD)
 - Git/GitHub (Version Control)
+- Gitops(ArgoCD)
 
 ## Phase 1 --> Installation and Prerequisties
 - Open Powershell as Administrator and run
