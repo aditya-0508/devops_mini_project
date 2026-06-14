@@ -99,7 +99,7 @@ Download from: https://www.jenkins.io/download/ and follow installer
 
 ---
 
-### 1.5 Install Terraform
+### 1.5 Install Terraform(Not done in this project)
 
 **Step 1:** In Ubuntu terminal, download Terraform
 ```bash
