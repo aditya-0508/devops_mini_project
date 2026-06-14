@@ -1,4 +1,4 @@
-Buliding a full stack Devops pipeline demonstrating containerization, CI/CD automtaion, Gitops
+Buliding a full stack Devops pipeline demonstrating containerization, CI/CD automtaion, Gitops...
 
 **Technologies Used:**
 - Docker (Containerization)
