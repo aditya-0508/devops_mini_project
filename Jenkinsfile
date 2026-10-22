@@ -1,181 +1,184 @@
+
 pipeline {
     agent any
-    
+
     environment {
-        IMAGE_NAME = "devops-mini-app"
-        IMAGE_TAG = "${BUILD_NUMBER}"
+        IMAGE_NAME     = "devops-mini-app"
         DOCKERHUB_USER = "adi070903"
-        KIND_CLUSTER = "devops-cluster"
-        FULL_IMAGE_NAME = "${DOCKERHUB_USER}/${IMAGE_NAME}:${IMAGE_TAG}"
+        KIND_CLUSTER   = "devops-cluster"
+        IMAGE_TAG      = "${BUILD_NUMBER}"
+        FULL_IMAGE_NAME = "${DOCKERHUB_USER}/${IMAGE_NAME}:${BUILD_NUMBER}"
+        LATEST_IMAGE   = "${DOCKERHUB_USER}/${IMAGE_NAME}:latest"
     }
-    
+
     stages {
         stage('Checkout Code') {
             steps {
-                echo '📦 Checking out code from repository...'
-                git branch: 'master', url: 'https://github.com/aditya-0508/devops_mini_project.git'
+                echo 'Checking out source code...'
+                checkout scm
             }
         }
-        
+
         stage('Build Docker Image') {
             steps {
-                echo "🔨 Building Docker image: ${FULL_IMAGE_NAME}"
-                sh """
-                    docker build -t ${FULL_IMAGE_NAME} .
-                    docker tag ${FULL_IMAGE_NAME} ${DOCKERHUB_USER}/${IMAGE_NAME}:latest
-                """
+                echo "Building ${FULL_IMAGE_NAME}"
+
+                sh '''
+                    set -eu
+                    docker build -t "$FULL_IMAGE_NAME" .
+                    docker tag "$FULL_IMAGE_NAME" "$LATEST_IMAGE"
+                '''
             }
         }
+
         stage('Login to DockerHub') {
             steps {
-                echo '🔐 Logging in to DockerHub...'
-                withCredentials([usernamePassword(
-                    credentialsId: 'dockerhub-creds',
-                    usernameVariable: 'USER',
-                    passwordVariable: 'PASS'
-                )]) {
-                    sh 'echo $PASS | docker login -u $USER --password-stdin'
+                echo 'Logging in to Docker Hub...'
+
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'dockerhub-creds',
+                        usernameVariable: 'DOCKER_USER',
+                        passwordVariable: 'DOCKER_PASS'
+                    )
+                ]) {
+                    sh '''
+                        set +x
+                        printf '%s' "$DOCKER_PASS" |
+                            docker login -u "$DOCKER_USER" --password-stdin
+                    '''
                 }
             }
         }
-        
+
         stage('Push to DockerHub') {
             steps {
-                echo "📤 Pushing image to DockerHub: ${FULL_IMAGE_NAME}"
-                sh """
-                    docker push ${FULL_IMAGE_NAME}
-                    docker push ${DOCKERHUB_USER}/${IMAGE_NAME}:latest
-                """
+                echo "Pushing ${FULL_IMAGE_NAME}"
+
+                sh '''
+                    set -eu
+                    docker push "$FULL_IMAGE_NAME"
+                    docker push "$LATEST_IMAGE"
+                '''
             }
         }
-        
+
+        stage('Validate KIND and Kubernetes') {
+            steps {
+                echo 'Checking KIND and Kubernetes connectivity...'
+
+                sh '''
+                    set -eu
+                    command -v kind
+                    command -v kubectl
+
+                    kind get clusters
+
+                    kind get clusters |
+                        grep -Fx "$KIND_CLUSTER"
+
+                    kubectl get nodes
+                '''
+            }
+        }
+
         stage('Load Image to KIND') {
             steps {
-                echo "📦 Loading image to KIND cluster: ${KIND_CLUSTER}"
-                script {
-                    sh """
-                        # Check if KIND cluster exists
-                        if ! kind get clusters | grep -q ${KIND_CLUSTER}; then
-                            echo "❌ KIND cluster '${KIND_CLUSTER}' not found!"
-                            echo "Available clusters:"
-                            kind get clusters
-                            exit 1
-                        fi
-                        
-                        # Load image to KIND
-                        echo "Loading ${FULL_IMAGE_NAME} to KIND..."
-                        kind load docker-image ${FULL_IMAGE_NAME} --name ${KIND_CLUSTER}
-                        
-                        # Also load the latest tag
-                        kind load docker-image ${DOCKERHUB_USER}/${IMAGE_NAME}:latest --name ${KIND_CLUSTER}
-                        
-                        echo "✓ Image loaded to KIND cluster"
-                    """
-                }
+                echo "Loading images into ${KIND_CLUSTER}..."
+
+                sh '''
+                    set -eu
+
+                    kind load docker-image "$FULL_IMAGE_NAME" \
+                        --name "$KIND_CLUSTER"
+
+                    kind load docker-image "$LATEST_IMAGE" \
+                        --name "$KIND_CLUSTER"
+                '''
             }
         }
-        
-stage('Deploy to Kubernetes') {
-    steps {
-        echo '☸️ Deploying to Kubernetes cluster...'
-        sh """
-            # Ensure namespace objects exist
-            kubectl apply -f kubernetes/deployment.yaml
-            kubectl apply -f kubernetes/service.yaml
 
-            # Now update image
-            kubectl set image deployment/devops-deployment \
-                devops-app=${FULL_IMAGE_NAME}
+        stage('Deploy to Kubernetes') {
+            steps {
+                echo "Deploying ${FULL_IMAGE_NAME}..."
 
-            # Wait rollout
-            kubectl rollout status deployment/devops-deployment --timeout=180s
-        """
-    }
-}
-        
+                sh '''
+                    set -eu
+
+                    kubectl apply -f kubernetes/deployment.yaml
+                    kubectl apply -f kubernetes/service.yaml
+
+                    kubectl set image deployment/devops-deployment \
+                        devops-app="$FULL_IMAGE_NAME"
+
+                    kubectl rollout status deployment/devops-deployment \
+                        --timeout=180s
+                '''
+            }
+        }
+
         stage('Verify Deployment') {
             steps {
-                echo '✅ Verifying deployment...'
-                script {
-                    sh """
-                        echo "=================================="
-                        echo "Deployment Status:"
-                        kubectl get deployment devops-deployment
-                        
-                        echo ""
-                        echo "Pod Status:"
-                        kubectl get pods -l app=devops-app
-                        
-                        echo ""
-                        echo "Service Status:"
-                        kubectl get service devops-service
-                        
-                        echo ""
-                        echo "Recent Rollout History:"
-                        kubectl rollout history deployment/devops-deployment
-                        
-                        echo ""
-                        echo "=================================="
-                        echo "✅ Application deployed successfully!"
-                        echo "🌐 Access at: http://localhost:30007"
-                        echo "=================================="
-                    """
-                }
+                echo 'Verifying application deployment...'
+
+                sh '''
+                    set -eu
+
+                    echo "=== Deployment ==="
+                    kubectl get deployment devops-deployment
+
+                    echo "=== Pods ==="
+                    kubectl get pods -l app=devops-app -o wide
+
+                    echo "=== Service ==="
+                    kubectl get service devops-service
+
+                    echo "=== Rollout History ==="
+                    kubectl rollout history deployment/devops-deployment
+                '''
             }
         }
-        
+
         stage('Cleanup Old Images') {
             steps {
-                echo '🧹 Cleaning up old Docker images...'
-                sh """
-                    # Remove test containers if any
-                    docker ps -a | grep test- | awk '{print \$1}' | xargs -r docker rm -f || true
-                    
-                    # Remove dangling images
+                echo 'Cleaning up dangling Docker images...'
+
+                sh '''
                     docker image prune -f
-                    
-                    # Keep last 5 builds, remove older ones
-                    docker images ${DOCKERHUB_USER}/${IMAGE_NAME} --format "{{.Tag}}" | \
-                        grep -E '^[0-9]+\$' | sort -rn | tail -n +6 | \
-                        xargs -I {} docker rmi ${DOCKERHUB_USER}/${IMAGE_NAME}:{} || true
-                    
-                    echo "✓ Cleanup complete"
-                """
+                '''
             }
         }
     }
-    
+
     post {
         success {
             echo '========================================='
-            echo '✅ Pipeline completed successfully!'
-            echo '========================================='
+            echo 'Pipeline completed successfully!'
             echo "Image: ${FULL_IMAGE_NAME}"
-            echo "Pushed to DockerHub: ✓"
-            echo "Deployed to Kubernetes: ✓"
-            echo "Access URL: http://localhost:30007"
+            echo 'Docker Hub push: SUCCESS'
+            echo 'Kubernetes deployment: SUCCESS'
             echo '========================================='
         }
-        
+
         failure {
-            echo '========================================='
-            echo '❌ Pipeline failed!'
-            echo '========================================='
-            echo 'Check the logs above for error details'
-            
-            // Show recent pod logs for debugging
-            sh """
-                echo "Last pod logs (for debugging):"
-                kubectl logs -l app=devops-app --tail=50 || true
-            """ 
+            echo 'Pipeline failed. Check the first failing stage.'
+
+            sh '''
+                echo "=== Kubernetes resources ==="
+                kubectl get pods -l app=devops-app -o wide || true
+
+                echo "=== Recent pod events ==="
+                kubectl get events --sort-by=.metadata.creationTimestamp \
+                    | tail -n 25 || true
+
+                echo "=== Recent application logs ==="
+                kubectl logs -l app=devops-app \
+                    --all-containers=true --tail=50 || true
+            '''
         }
-        
+
         always {
-            echo '🧹 Final cleanup...'
-            sh """
-                # Remove any hanging test containers
-                docker ps -a | grep test-${BUILD_NUMBER} && docker rm -f test-${BUILD_NUMBER} || true
-            """
+            echo "Build ${BUILD_NUMBER} finished."
         }
     }
 }
